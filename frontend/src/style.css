@@ -1,0 +1,23 @@
+body {
+    font-family: Arial;
+    padding: 20px;
+    background: #f4f4f4;
+}
+
+nav {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.card {
+    background: white;
+    padding: 10px;
+    width: 200px;
+}
+
+#grid {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
