@@ -71,7 +71,11 @@ const produtoController = {
                 return res.status(400).json({ message: "Valor inválido" });
             }
 
-            const caminhoImagem = req.file ? req.file.filename : undefined;
+            const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+            const caminhoImagem = req.file
+                ? `${baseUrl}/uploads/images/${req.file.filename}`
+                : null;
 
             const produto = Produto.editar({
                 nome,
