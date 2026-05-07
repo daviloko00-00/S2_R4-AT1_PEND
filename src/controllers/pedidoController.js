@@ -22,6 +22,12 @@ const pedidoController = {
             )
             console.log(itensPedido)
 
+            if (!itens || !Array.isArray(itens) || itens.length === 0) {
+            return res.status(400).json({
+                message: "Não foi possível criar o pedido. Não há itens para realizar o mesmo"
+            });
+        }
+
             const subtotalItens = itemPedidos.calcularSubTotal(itensPedido);
             //método pro calculo desse pedido
             // primeiro os itens e depois a cabaça do pedido
