@@ -8,20 +8,20 @@ const pedidoController = {
         try {
             let { clienteId, itens } = req.body;
 
-            
-            
-            
+
+
+
             //  CRIA OBJETOS 
-            console.log("criação dos itens" )
+            console.log("criação dos itens")
             const itensPedido = itens.map(item =>
                 itemPedidos.criar({
                     produtoId: item.produtoId,
                     quantidade: item.quantidade,
-                    valorItem : item.valorItem
+                    valorItem: item.valorItem
                 })
             )
             console.log(itensPedido)
-            
+
             const subtotalItens = itemPedidos.calcularSubTotal(itensPedido);
             //método pro calculo desse pedido
             // primeiro os itens e depois a cabaça do pedido
@@ -30,12 +30,12 @@ const pedidoController = {
                 subtotalItens,
                 status: statusPedido.ABERTO
             });
-        
+
             //  REPOSITORY 
             const result = await pedidoRepository.criar(
                 pedido,
                 itensPedido
-                
+
             );
 
             return res.status(201).json({ result });
@@ -49,111 +49,21 @@ const pedidoController = {
         }
     },
 
-    atualizar: async (req, res) => {
-    try {
-        const id = Number(req.query.id);
 
-        let {
-            nome,
-            cpf,
-            numeroTelefone,
-            numeroCasa,
-            cep
-        } = req.body;
 
-        // pedidos obrigatório
-        if (!id || !nome || !cpf) {
-            return res.status(400).json({
-                message: "ID, nome e CPF são obrigatórios"
-            });
-        }
 
-        // Limpeza
-        cpf = limparNumero(cpf);
 
-        if (numeroTelefone) {
-            numeroTelefone = limparNumero(numeroTelefone);
-        }
-
-        if (cep) {
-            cep = limparNumero(cep);
-        }
-
-        // Validar CPF
-        if (!validarCPF(cpf)) {
-            return res.status(400).json({
-                message: "CPF inválido"
-            });
-        }
-
-        // pedidos obrigatório
-        const pedidos = pedidos.editar({
-            nome,
-            cpf
-        }, id);
-
-        // Telefone opcional
-        const telefone = numeroTelefone
-            ? Telefone.editar({
-                numero: numeroTelefone
-            }, id)
-            : null;
-
-        let endereco = null;
-
-        // Endereço  usando ViaCEP
-        if (cep && numeroCasa) {
-            const enderecoViaCep = await respostaViaCep(cep);
-
-            if (!enderecoViaCep || enderecoViaCep.erro) {
-                return res.status(400).json({
-                    message: "CEP inválido"
-                });
-            }
-
-            endereco = Enderecos.editar({
-                cep,
-                logradouro: enderecoViaCep.logradouro,
-                numero: numeroCasa,
-                bairro: enderecoViaCep.bairro,
-                cidade: enderecoViaCep.localidade,
-                estado: enderecoViaCep.estado,
-                complemento: enderecoViaCep.complemento || null
-            }, id);
-        }
-
-        const result = await pedidosRepository.atualizar(
-            id,
-            pedidos,
-            telefone,
-            endereco
-        );
-
-        return res.status(200).json({ result });
-
-    } catch (error) {
-        console.error(error);
-
-        return res.status(500).json({
-            message: "Ocorreu um erro no servidor",
-            errorMessage: error.message
-        });
-    }
-},
-
-    deletar: async (req, res) => {
+    selecionar: async (req, res) => {
         try {
-            const id = Number(req.params.id);
+            const id = req.params.id ? Number(req.params.id) : null;
 
-            if (!id) {
-                return res.status(400).json({
-                    message: "ID inválido"
-                });
+            if (id) {
+                const pedido = await pedidoRepository.selecionarPorIdCompleto(id);
+                return res.status(200).json(pedido);
             }
 
-            const result = await pedidosRepository.deletar(id);
-
-            return res.status(200).json({ result });
+            const result = await pedidoRepository.selecionar();
+            return res.status(200).json(result);
 
         } catch (error) {
             console.error(error);
@@ -164,29 +74,112 @@ const pedidoController = {
         }
     },
 
-    selecionar: async (req, res) => {
-    try {
-        const id = req.params.id ? Number(req.params.id) : null;
+    adicionarItemPedido: async (req, res) => {
+        try {
+            const idPedido = Number(req.params.id);
+            const { produtoId, quantidade, valorItem } = req.body;
 
-        if (id) {
-            const pedido = await pedidoRepository.selecionarPorIdCompleto(id);
-            return res.status(200).json(pedido);
+            // CRIA OBJETO ITEM
+            const novoItem = itemPedidos.criar({
+                produtoId,
+                quantidade,
+                valorItem
+            });
+
+            // CALCULA SUBTOTAL DO ITEM
+            const subtotalItem = itemPedidos.calcularSubTotal([novoItem]);
+
+            // REPOSITORY
+            const result = await pedidoRepository.adicionarItemPedido(idPedido, novoItem, subtotalItem);
+
+            return res.status(200).json(result);
+
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({
+                message: "Erro ao adicionar item no pedido",
+                errorMessage: error.message
+            });
+        }
+    },
+    editarItemExistente: async (req, res) => {
+        try {
+            const { idPedido } = req.params;
+            const { itemPedidoId, quantidade } = req.body;
+
+            const pedido = new Pedido({ id: idPedido });
+            const itemPedido = new itemPedidos({ itemPedidoId, quantidade });
+            console.log("pedido", pedido, "item", itemPedido)
+            const result = await pedidoRepository.editarItemExistente(pedido, itemPedido);
+
+            return res.status(200).json(result);
+
+        } catch (error) {
+            return res.status(400).json({ error: error.message });
+        }
+    },
+
+    atualizarStatus: async (req, res) => {
+        try {
+            const id = Number(req.body.id);
+            const { status } = req.body;
+
+            if (!id || isNaN(id)) {
+                return res.status(400).json({ error: "ID inválido" });
+            }
+
+            if (!status) {
+                return res.status(400).json({ error: "Status é obrigatório" });
+            }
+
+            const pedidoAtual = await pedidoRepository.selecionarPorId(id);
+
+            if (!pedidoAtual) {
+                return res.status(404).json({ error: "Pedido não encontrado" });
+            }
+
+            const novoPedido = Pedido.editar({
+                clienteId: pedidoAtual.ClienteId,
+                subtotal: pedidoAtual.Subtotal,
+                status: status,
+                id: pedidoAtual.Id
+            });
+
+            const result = await pedidoRepository.atualizarStatus(id, status);
+
+            return res.status(200).json({
+                message: "Status atualizado com sucesso",
+                pedido: novoPedido,
+                result
+            });
+
+        } catch (error) {
+            return res.status(500).json({
+                error: "Erro ao atualizar status",
+                details: error.message
+            });
+        }
+    },
+
+    deleteItemPedido: async (req, res) => {
+    try {
+        const idItem = Number(req.params.id);
+
+        if (!idItem || isNaN(idItem)) {
+            return res.status(400).json({ error: "ID do item inválido" });
         }
 
-        const result = await pedidoRepository.selecionar();
+        const result = await pedidoRepository.deletarItemPed(idItem);
+
         return res.status(200).json(result);
 
     } catch (error) {
-        console.error(error);
         return res.status(500).json({
-            message: "Ocorreu um erro no servidor",
-            errorMessage: error.message
+            error: "Erro ao deletar item do pedido",
+            details: error.message
         });
     }
 }
 };
 
 export default pedidoController;
-
-
-
