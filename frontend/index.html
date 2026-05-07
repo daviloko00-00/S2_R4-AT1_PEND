@@ -7,14 +7,31 @@
 </head>
 <body>
 
-    <!-- MENU -->
-    <nav>
-        <a href="#/">Produtos</a>
-        <a href="#/carrinho">Carrinho 🛒</a>
-    </nav>
+    <header class="site-header">
+        <div class="header-content">
+            <div class="brand">
+                <div>
+                    <h1>Loja da Resenha</h1>
+                    <p>Mercado online inspirado em fantasia</p>
+                </div>
+            </div>
+            <nav class="site-nav">
+                <a href="#/">Produtos</a>
+                <a href="#/carrinho">Carrinho</a>
+            </nav>
+        </div>
 
-    <!-- CONTEÚDO DINÂMICO -->
-    <div id="app"></div>
+        <div class="hero-banner">
+            <div class="hero-copy">
+                <h3>Produtos elegantes para sua jornada de compras</h3>
+                <p>Design suave, navegação SPA e armazenamento local para manter seu carrinho sempre presente.</p>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div id="app"></div>
+    </main>
 
     <script type="module" src="/src/main.js"></script>
 </body>

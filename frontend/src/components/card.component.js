@@ -6,9 +6,11 @@ export function criarCard(produto) {
 
     div.innerHTML = `
         <img src="${produto.imagem}" />
-        <h3>${produto.nome}</h3>
-        <p>R$ ${produto.preco}</p>
-        <button>Adicionar</button>
+        <div class="card-content">
+            <h3>${produto.nome}</h3>
+            <p class="price">R$ ${produto.preco}</p>
+            <button>Adicionar</button>
+        </div>
     `;
 
     div.querySelector("button").onclick = () => {

@@ -16,11 +16,3 @@ function router() {
 
 window.addEventListener("hashchange", router);
 router();
-
-// menu simples
-document.body.insertAdjacentHTML("afterbegin", `
-    <nav>
-        <a href="#/">Produtos</a>
-        <a href="#/carrinho">Carrinho</a>
-    </nav>
-`);
