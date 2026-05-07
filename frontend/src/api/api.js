@@ -22,3 +22,17 @@ export async function enviarPedido(pedido) {
         body: JSON.stringify(pedido)
     });
 }
+
+export async function getPedidos() {
+    const res = await fetch(`${API_URL}/pedidos`);
+    const data = await res.json();
+    const pedidos = data?.result ?? [];
+
+    return pedidos.map(pedido => ({
+        id: pedido.Id ?? pedido.id,
+        clienteId: pedido.IdCliente ?? pedido.clienteId,
+        subtotal: pedido.Subtotal ?? pedido.subtotal,
+        status: pedido.Status ?? pedido.status,
+        dataCad: pedido.DataCad ?? pedido.dataCad
+    }));
+}
