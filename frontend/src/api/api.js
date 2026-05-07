@@ -46,3 +46,26 @@ export async function getPedidos() {
         dataCad: pedido.DataCad ?? pedido.dataCad
     }));
 }
+
+export async function getPedidoDetalhes(id) {
+    const res = await fetch(`${API_URL}/pedidos/${id}`);
+    const data = await res.json();
+    const pedido = data?.result ?? null;
+    if (!pedido) {
+        return null;
+    }
+
+    return {
+        id: pedido.pedido?.id ?? pedido.Id ?? pedido.id,
+        status: pedido.pedido?.status ?? pedido.Status ?? pedido.status,
+        subtotal: pedido.pedido?.subtotal ?? pedido.pedido?.SubTotal ?? pedido.SubTotal ?? pedido.subtotal,
+        dataCad: pedido.pedido?.data ?? pedido.pedido?.dataCad ?? pedido.DataCad ?? pedido.dataCad,
+        itens: (pedido.itens ?? []).map(item => ({
+            idItem: item.idItem ?? item.ItemPedidoId ?? item.Id,
+            nome: item.produto?.nome ?? item.ProdutoNome ?? "Item",
+            quantidade: item.quantidade ?? item.Quantidade ?? 0,
+            valorUnitario: item.valorItem ?? item.ValorItem ?? item.produto?.valor ?? 0,
+            subtotal: (item.valorItem ?? item.ValorItem ?? item.produto?.valor ?? 0) * (item.quantidade ?? item.Quantidade ?? 0)
+        }))
+    };
+}
