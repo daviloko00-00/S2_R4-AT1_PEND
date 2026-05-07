@@ -19,7 +19,14 @@ export async function enviarPedido(pedido) {
         headers: {
             "Content-Type": "application/json"
         },
-        body: JSON.stringify(pedido)
+        body: JSON.stringify({
+            clienteId: 27,
+            itens: pedido.map(item => ({
+                produtoId: item.id,
+                quantidade: item.qtd,
+                valorItem: item.preco
+            }))
+        })
     });
 }
 
