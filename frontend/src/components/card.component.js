@@ -8,8 +8,13 @@ export function criarCard(produto) {
         <img src="${produto.imagem}" />
         <div class="card-content">
             <h3>${produto.nome}</h3>
-            <p class="price">R$ ${produto.preco}</p>
-            <button>Adicionar</button>
+            <p class="category">${produto.categoria}</p>
+            <p class="description">${produto.descricao}</p>
+            <div class="card-meta">
+                <span class="price">R$ ${produto.preco}</span>
+                <span class="date">${produto.dataCad ? new Date(produto.dataCad).toLocaleDateString('pt-BR') : ''}</span>
+            </div>
+            <button>Comprar</button>
         </div>
     `;
 

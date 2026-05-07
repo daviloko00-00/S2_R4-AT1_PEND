@@ -59,11 +59,11 @@ const pedidoController = {
 
             if (id) {
                 const pedido = await pedidoRepository.selecionarPorIdCompleto(id);
-                return res.status(200).json(pedido);
+                return res.status(200).json({ result: pedido });
             }
 
             const result = await pedidoRepository.selecionar();
-            return res.status(200).json(result);
+            return res.status(200).json({ result });
 
         } catch (error) {
             console.error(error);

@@ -1,9 +1,9 @@
 import { getPedidos } from "../api/api.js";
 
 const statusConfig = {
-    "Aberto": { cor: "#d6a95f", label: "Aberto" },
-    "Finalizado": { cor: "#2d5016", label: "Finalizado" },
-    "Pendente": { cor: "#a67c52", label: "Pendente" }
+    "Aberto": { cor: "#5edf55c7", label: "Aberto" },
+    "Finalizado": { cor: "#f31111bc", label: "Finalizado" },
+    "Pendente": { cor: "#cec12ebd", label: "Pendente" }
 };
 
 export async function renderPedidos(root) {
