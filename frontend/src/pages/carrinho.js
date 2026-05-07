@@ -27,34 +27,45 @@ export function renderCarrinho(root) {
     `;
 
     const lista = document.getElementById("lista");
+    const checkoutButton = document.getElementById("checkout");
 
     if (cart.length === 0) {
         lista.innerHTML = '<p>Seu carrinho está vazio. Adicione produtos na página de produtos.</p>';
+        checkoutButton.disabled = true;
+        checkoutButton.textContent = "Carrinho vazio";
+        checkoutButton.classList.add("disabled");
+    } else {
+        cart.forEach(item => {
+            total += item.preco * item.qtd;
+
+            const div = document.createElement("div");
+            div.className = "cart-item";
+            div.innerHTML = `
+                <h3>${item.nome}</h3>
+                <div class="item-details">
+                    <p>Quantidade: <strong>${item.qtd}</strong></p>
+                    <p>Preço unitário: <strong>R$ ${item.preco}</strong></p>
+                    <p>Subtotal: <strong>R$ ${item.preco * item.qtd}</strong></p>
+                </div>
+            `;
+
+            lista.appendChild(div);
+        });
+
+        checkoutButton.disabled = false;
+        checkoutButton.textContent = "Checkout";
+        checkoutButton.classList.remove("disabled");
+
+        checkoutButton.onclick = async () => {
+            if (cart.length === 0) {
+                return;
+            }
+            await enviarPedido(cart);
+            alert("Pedido enviado 🚀");
+            saveCart([]);
+            location.hash = "#/";
+        };
     }
 
-    cart.forEach(item => {
-        total += item.preco * item.qtd;
-
-        const div = document.createElement("div");
-        div.className = "cart-item";
-        div.innerHTML = `
-            <h3>${item.nome}</h3>
-            <div class="item-details">
-                <p>Quantidade: <strong>${item.qtd}</strong></p>
-                <p>Preço unitário: <strong>R$ ${item.preco}</strong></p>
-                <p>Subtotal: <strong>R$ ${item.preco * item.qtd}</strong></p>
-            </div>
-        `;
-
-        lista.appendChild(div);
-    });
-
     document.getElementById("total").innerText = `Total: R$ ${total}`;
-
-    document.getElementById("checkout").onclick = async () => {
-        await enviarPedido(cart);
-        alert("Pedido enviado 🚀");
-        saveCart([]);
-        location.hash = "#/";
-    };
 }
