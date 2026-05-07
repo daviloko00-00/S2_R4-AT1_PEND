@@ -1,4 +1,5 @@
 import { addToCart } from "../storage/cart";
+import { showToast } from "../utils/toast.js";
 
 export function criarCard(produto) {
     const div = document.createElement("div");
@@ -12,15 +13,23 @@ export function criarCard(produto) {
             <p class="description">${produto.descricao}</p>
             <div class="card-meta">
                 <span class="price">R$ ${produto.preco}</span>
-                <span class="date">${produto.dataCad ? new Date(produto.dataCad).toLocaleDateString('pt-BR') : ''}</span>
             </div>
-            <button>Comprar</button>
+            <div class="card-actions">
+                <button class="btn-add">Adicionar ao carrinho</button>
+                <button class="btn-buy">Comprar</button>
+            </div>
         </div>
     `;
 
-    div.querySelector("button").onclick = () => {
+    div.querySelector(".btn-add").onclick = () => {
         addToCart(produto);
-        alert("Adicionado ao carrinho 🛒");
+        showToast("Produto adicionado ao carrinho ");
+    };
+
+    div.querySelector(".btn-buy").onclick = () => {
+        addToCart(produto);
+        showToast("Produto adicionado ao carrinho ");
+        location.hash = "#/carrinho";
     };
 
     return div;

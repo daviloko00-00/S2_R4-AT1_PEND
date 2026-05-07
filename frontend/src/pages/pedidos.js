@@ -1,9 +1,13 @@
-import { getPedidos } from "../api/api.js";
+import { getPedidos, getPedidoDetalhes } from "../api/api.js";
 
 const statusConfig = {
     "Aberto": { cor: "#5edf55c7", label: "Aberto" },
     "Finalizado": { cor: "#f31111bc", label: "Finalizado" },
     "Pendente": { cor: "#cec12ebd", label: "Pendente" }
+};
+
+const formatCurrency = (value) => {
+    return Number(value || 0).toFixed(2).replace(".", ",");
 };
 
 export async function renderPedidos(root) {
@@ -26,7 +30,14 @@ export async function renderPedidos(root) {
         return;
     }
 
-    pedidos.forEach(pedido => {
+    const pedidosDetalhados = await Promise.all(
+        pedidos.map(async pedido => {
+            const detalhe = await getPedidoDetalhes(pedido.id);
+            return detalhe || pedido;
+        })
+    );
+
+    pedidosDetalhados.forEach(pedido => {
         const statusInfo = statusConfig[pedido.status] || {
             cor: "#999",
             label: pedido.status || "Desconhecido"
@@ -35,6 +46,27 @@ export async function renderPedidos(root) {
         const dataPedido = pedido.dataCad 
             ? new Date(pedido.dataCad).toLocaleDateString('pt-BR')
             : 'Data não disponível';
+
+        const itemList = (pedido.itens || []).map(item => `
+            <div class="pedido-item">
+                <span>${item.nome}</span>
+                <span>${item.quantidade}x</span>
+                <span>R$ ${formatCurrency(item.valorUnitario)}</span>
+                <span>R$ ${formatCurrency(item.subtotal)}</span>
+            </div>
+        `).join("");
+
+        const itemsMarkup = itemList.length > 0 ? `
+            <div class="pedido-items">
+                <div class="pedido-item pedido-item-header">
+                    <strong>Produto</strong>
+                    <strong>Qtd</strong>
+                    <strong>Unit.</strong>
+                    <strong>Total</strong>
+                </div>
+                ${itemList}
+            </div>
+        ` : '<p class="empty-state">Detalhes do pedido indisponíveis.</p>';
 
         const div = document.createElement("div");
         div.className = "pedido-card";
@@ -48,14 +80,11 @@ export async function renderPedidos(root) {
                     ${statusInfo.label}
                 </span>
             </div>
+            ${itemsMarkup}
             <div class="pedido-info">
                 <div class="info-item">
-                    <p class="label">ID do Cliente</p>
-                    <p class="value">${pedido.clienteId}</p>
-                </div>
-                <div class="info-item">
                     <p class="label">Subtotal</p>
-                    <p class="value">R$ ${parseFloat(pedido.subtotal).toFixed(2)}</p>
+                    <p class="value">R$ ${formatCurrency(pedido.subtotal)}</p>
                 </div>
             </div>
         `;

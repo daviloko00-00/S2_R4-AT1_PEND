@@ -1,10 +1,11 @@
 import { getCart, saveCart } from "../storage/cart";
 import { enviarPedido } from "../api/api";
+import { showToast } from "../utils/toast.js";
+
+const formatCurrency = (value) => Number(value || 0).toFixed(2).replace(".", ",");
 
 export function renderCarrinho(root) {
-    const cart = getCart();
-
-    let total = 0;
+    let cart = getCart();
 
     root.innerHTML = `
         <section class="page-heading">
@@ -28,44 +29,69 @@ export function renderCarrinho(root) {
 
     const lista = document.getElementById("lista");
     const checkoutButton = document.getElementById("checkout");
+    const totalLabel = document.getElementById("total");
 
-    if (cart.length === 0) {
-        lista.innerHTML = '<p>Seu carrinho está vazio. Adicione produtos na página de produtos.</p>';
-        checkoutButton.disabled = true;
-        checkoutButton.textContent = "Carrinho vazio";
-        checkoutButton.classList.add("disabled");
-    } else {
-        cart.forEach(item => {
-            total += item.preco * item.qtd;
+    function updateCartDisplay() {
+        cart = getCart();
+        const total = cart.reduce((sum, item) => sum + item.preco * item.qtd, 0);
 
-            const div = document.createElement("div");
-            div.className = "cart-item";
-            div.innerHTML = `
-                <h3>${item.nome}</h3>
-                <div class="item-details">
-                    <p>Quantidade: <strong>${item.qtd}</strong></p>
-                    <p>Preço unitário: <strong>R$ ${item.preco}</strong></p>
-                    <p>Subtotal: <strong>R$ ${item.preco * item.qtd}</strong></p>
-                </div>
-            `;
+        lista.innerHTML = "";
 
-            lista.appendChild(div);
-        });
+        if (cart.length === 0) {
+            lista.innerHTML = '<p>Seu carrinho está vazio. Adicione produtos na página de produtos.</p>';
+            checkoutButton.disabled = true;
+            checkoutButton.textContent = "Carrinho vazio";
+            checkoutButton.classList.add("disabled");
+        } else {
+            cart.forEach((item, index) => {
+                const div = document.createElement("div");
+                div.className = "cart-item";
+                div.innerHTML = `
+                    <div class="cart-item-header">
+                        <h3>${item.nome}</h3>
+                        <button class="remove-button" type="button">Remover</button>
+                    </div>
+                    <div class="item-details">
+                        <p>Quantidade: <strong>${item.qtd}</strong></p>
+                        <p>Preço unitário: <strong>R$ ${formatCurrency(item.preco)}</strong></p>
+                        <p>Subtotal: <strong>R$ ${formatCurrency(item.preco * item.qtd)}</strong></p>
+                    </div>
+                `;
 
-        checkoutButton.disabled = false;
-        checkoutButton.textContent = "Checkout";
-        checkoutButton.classList.remove("disabled");
+                div.querySelector(".remove-button").onclick = () => {
+                    cart.splice(index, 1);
+                    saveCart(cart);
+                    updateCartDisplay();
+                    showToast("Item removido do carrinho", "success");
+                };
 
-        checkoutButton.onclick = async () => {
-            if (cart.length === 0) {
-                return;
-            }
-            await enviarPedido(cart);
-            alert("Pedido enviado 🚀");
-            saveCart([]);
-            location.hash = "#/";
-        };
+                lista.appendChild(div);
+            });
+
+            checkoutButton.disabled = false;
+            checkoutButton.textContent = "Finalizar compra";
+            checkoutButton.classList.remove("disabled");
+        }
+
+        totalLabel.innerText = `Total: R$ ${formatCurrency(total)}`;
     }
 
-    document.getElementById("total").innerText = `Total: R$ ${total}`;
+    checkoutButton.onclick = async () => {
+        cart = getCart();
+        if (cart.length === 0) {
+            return;
+        }
+
+        try {
+            await enviarPedido(cart);
+            saveCart([]);
+            showToast("Pedido enviado com sucesso! ", "success");
+            location.hash = "#/";
+        } catch (error) {
+            console.error(error);
+            showToast("Não foi possível enviar o pedido. Tente novamente.", "error");
+        }
+    };
+
+    updateCartDisplay();
 }
