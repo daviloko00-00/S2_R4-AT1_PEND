@@ -44,8 +44,8 @@ export class Categoria {
         }
     }
     #validarDescricao(value){
-        if(value && (value.trim().length < 5 ||  value.trim().length > 100)){
-            throw new Error("O campo descrição deve ter entre 5 caracteres e máximo 100 caracteres")
+        if(value && (value.trim().length < 5 ||  value.trim().length > 255)){
+            throw new Error("O campo descrição deve ter entre 5 caracteres e máximo 255 caracteres")
         }
     }
 

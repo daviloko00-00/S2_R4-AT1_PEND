@@ -123,108 +123,121 @@ const pedidoRepository = {
 
         return pedido;
     },
-    atualizar: async (id, pedido, itemPedidos, endereco) => {
+    
+    adicionarItemPedido: async (idPedido, item) => {
+    const conn = await connection.getConnection();
+
+    try {
+        await conn.beginTransaction();
+
+        // Verificar se o pedido existe
+        const [pedidoRows] = await conn.execute(
+            "SELECT Id FROM pedidos WHERE Id = ?",
+            [idPedido]
+        );
+
+        if (pedidoRows.length === 0) {
+            throw new Error("Pedido não encontrado");
+        }
+
+        // Inserir novo item no pedido
+        await conn.execute(
+            `INSERT INTO itempedidos (PedidoId, ProdutoId, Quantidade, ValorItem)
+             VALUES (?, ?, ?, ?)`,
+            [idPedido, item.produtoId, item.quantidade, item.valorItem]
+        );
+
+        // Recalcular subtotal
+        const [subtotalRows] = await conn.execute(
+            `SELECT SUM(Quantidade * ValorItem) AS subtotal
+             FROM itempedidos
+             WHERE PedidoId = ?`,
+            [idPedido]
+        );
+
+        const novoSubtotal = subtotalRows[0].subtotal ?? 0;
+
+        // Atualizar subtotal no pedido
+        await conn.execute(
+            "UPDATE pedidos SET SubTotal = ? WHERE Id = ?",
+            [novoSubtotal, idPedido]
+        );
+
+        await conn.commit();
+
+        return {
+            message: "Item adicionado com sucesso",
+            novoSubtotal
+        };
+
+    } catch (error) {
+        await conn.rollback();
+        throw new Error(error.message);
+
+    } finally {
+        conn.release();
+    }
+},
+     async editarItemExistente(pedido, itemPedido) {
         const conn = await connection.getConnection();
 
         try {
             await conn.beginTransaction();
 
-            // Atualizar pedido (obrigatório)
-            const sqlPedido = `
-            UPDATE pedidos
-            SET Nome = ?, Cpf = ?, 
-            WHERE Id = ?
-        `;
+            // verificar se pedido existe
+            const [pedidoRows] = await conn.execute(
+                "SELECT Id FROM pedidos WHERE Id = ?",
+                [pedido.id]
+            );
 
-            const valuesPedido = [
-                pedido.nome,
-                pedido.cpf,
-                id
-            ];
-
-            const [rowsPedido] = await conn.execute(sqlPedido, valuesPedido);
-
-            let rowsItemPedidos = null;
-            let rowsEnd = null;
-
-            // Atualizar itemPedidos (opcional)
-            if (itemPedidos) {
-                const sqlItemPedidos = `
-                UPDATE itemPedidoss
-                SET Numero = ?
-                WHERE Idpedido = ?
-            `;
-
-                const valuesItemPedidos = [
-                    itemPedidos.numero,
-                    id
-                ];
-
-                [rowsItemPedidos] = await conn.execute(sqlItemPedidos, valuesItemPedidos);
+            if (pedidoRows.length === 0) {
+                throw new Error("Pedido não encontrado");
             }
 
-            // Atualizar endereço (opcional)
-            if (endereco) {
-                const sqlEnd = `
-                UPDATE enderecos
-                SET Cep = ?, Logradouro = ?, Numero = ?, Bairro = ?,
-                    Cidade = ?, Estado = ?, Complemento = ?
-                WHERE Idpedido = ?
-            `;
+            // verificar se item existe no pedido
+            const [itemRows] = await conn.execute(
+                "SELECT Id FROM itempedidos WHERE Id = ? AND PedidoId = ?",
+                [itemPedido.itemPedidoId, pedido.id]
+            );
 
-                const valuesEnd = [
-                    endereco.cep,
-                    endereco.logradouro,
-                    endereco.numero,
-                    endereco.bairro,
-                    endereco.cidade,
-                    endereco.estado,
-                    endereco.complemento ?? null,
-                    id
-                ];
-
-                [rowsEnd] = await conn.execute(sqlEnd, valuesEnd);
+            if (itemRows.length === 0) {
+                throw new Error("Item do pedido não encontrado");
             }
+
+            // atualizar item
+            await conn.execute(
+                `UPDATE itempedidos 
+                 SET Quantidade = ?
+                 WHERE Id = ? AND PedidoId = ?`,
+                [itemPedido.quantidade, itemPedido.itemPedidoId, pedido.id]
+            );
+
+            // recalcular subtotal
+            const [subtotalRows] = await conn.execute(
+                `SELECT SUM(Quantidade * ValorItem) AS subtotal
+                 FROM itempedidos
+                 WHERE PedidoId = ?`,
+                [pedido.id]
+            );
+
+            const novoSubtotal = subtotalRows[0].subtotal ?? 0;
+
+            // atualizar subtotal no objeto Pedido
+            pedido.subTotal = novoSubtotal;
+
+            // atualizar subtotal no banco
+            await conn.execute(
+                "UPDATE pedidos SET SubTotal = ? WHERE Id = ?",
+                [pedido.subTotal, pedido.id]
+            );
 
             await conn.commit();
 
             return {
-                idpedido: id,
-                rowsPedido,
-                rowsItemPedidos,
-                rowsEnd
+                message: "Item atualizado com sucesso",
+                pedidoId: pedido.id,
+                novoSubtotal: pedido.subTotal
             };
-
-        } catch (error) {
-            await conn.rollback();
-            throw new Error(error.message);
-        }
-    },
-
-    deletar: async (id) => {
-        const conn = await connection.getConnection();
-
-        try {
-            await conn.beginTransaction();
-
-            await conn.execute(
-                "DELETE FROM itemPedidoss WHERE Idpedido = ?",
-                [id]
-            );
-
-            await conn.execute(
-                "DELETE FROM enderecos WHERE Idpedido = ?",
-                [id]
-            );
-
-            const [result] = await conn.execute(
-                "DELETE FROM pedidos WHERE Id = ?",
-                [id]
-            );
-
-            await conn.commit();
-
-            return result;
 
         } catch (error) {
             await conn.rollback();
@@ -233,7 +246,116 @@ const pedidoRepository = {
         } finally {
             conn.release();
         }
+    },
+
+    editarStatusPedido : async (pedidos, id) => {
+
+        const conn = await connection.getConnection();
+
+        try {
+
+            const [rowsPedido] = await conn.execute(
+                "SELECT Id FROM pedidos WHERE Id = ?",
+                [id]
+            );
+
+            if (rowsPedido.length === 0) {
+                throw new Error("Pedido não encontrado");
+            }
+
+            if (pedidos === ' ' || !pedidos){
+                throw new Error("Status para pedido não aceito");
+
+            }
+
+            const [updateStatus] = await conn.execute(
+                "UPDATE pedidos SET Status =? FROM pedidos WHERE Id = ?"
+            , [pedidos.Status, id])
+
+            conn.commit();
+
+            return {updateStatus}
+            
+        } catch (error) {
+            await conn.rollback();
+            throw new Error(error.message);
+        } finally {
+            conn.release();
+        }  
+    },
+
+    selecionarPorId: async (id) => {
+    const sql = "SELECT * FROM pedidos WHERE Id = ?";
+    const [rows] = await connection.execute(sql, [id]);
+
+    return rows[0];
+},
+
+atualizarStatus: async (id, status) => {
+    const conn = await connection.getConnection();
+
+    const [result] = await conn.execute(
+        "UPDATE pedidos SET Status = ? WHERE Id = ?",
+        [status, id]
+    );
+
+    return result;
+},
+
+deletarItemPed: async (idItem) => {
+    const conn = await connection.getConnection();
+
+    try {
+        await conn.beginTransaction();
+
+        // 1 - Buscar o item antes de excluir
+        const [itemRows] = await conn.execute(
+            "SELECT PedidoId FROM itempedidos WHERE Id = ?",
+            [idItem]
+        );
+
+        if (itemRows.length === 0) {
+            throw new Error("Item não encontrado");
+        }
+
+        const pedidoId = itemRows[0].PedidoId;
+
+        // 2 - Excluir item
+        await conn.execute(
+            "DELETE FROM itempedidos WHERE Id = ?",
+            [idItem]
+        );
+
+        // 3 - Recalcular subtotal do pedido
+        const [subtotalRows] = await conn.execute(
+            //IFNULL é pra evitar erro quando não existir nenhum item no pedido.
+            "SELECT IFNULL(SUM(Quantidade * ValorItem), 0) AS subtotal FROM itempedidos WHERE PedidoId = ?",
+            [pedidoId]
+        );
+
+        const novoSubtotal = subtotalRows[0].subtotal;
+
+        // 4 - Atualizar subtotal na tabela pedidos
+        await conn.execute(
+            "UPDATE pedidos SET Subtotal = ? WHERE Id = ?",
+            [novoSubtotal, pedidoId]
+        );
+
+        await conn.commit();
+
+        return {
+            message: "Item deletado e subtotal atualizado",
+            pedidoId,
+            novoSubtotal
+        };
+
+    } catch (error) {
+        await conn.rollback();
+        throw error;
+    } finally {
+        conn.release();
     }
+}
 };
 
 export default pedidoRepository;
