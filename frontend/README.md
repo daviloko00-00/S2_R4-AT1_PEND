@@ -1,6 +1,5 @@
 # Frontend - TechNova
 
-Este diretório contém a interface frontend do projeto de e-commerce.
 O site foi construído com Vite e JavaScript puro, consumindo uma API REST para produtos e pedidos.
 
 ## Funcionalidades
@@ -9,7 +8,6 @@ O site foi construído com Vite e JavaScript puro, consumindo uma API REST para 
   - Exibe uma vitrine de produtos em grid responsivo com cards visualmente destacados.
   - Cada card mostra: imagem do produto, nome, categoria, descrição e preço formatado em reais.
   - Requisição assíncrona ao endpoint `/produtos/detalhes` da API para carregar dados em tempo real.
-  - Tratamento de erros de conexão com exibição de notificações ao usuário.
   - Dois botões de ação por produto:
     - **Adicionar ao carrinho**: incrementa quantidade se já existe no carrinho ou adiciona novo item.
     - **Comprar**: adiciona ao carrinho e redireciona automaticamente para a página de checkout.
@@ -20,7 +18,6 @@ O site foi construído com Vite e JavaScript puro, consumindo uma API REST para 
   - Funcionalidade de incremento automático: ao adicionar um produto já no carrinho, incrementa a quantidade em 1.
   - Remoção individual de itens com confirmação visual via toast.
   - Cálculo automático e exibição do **total do pedido** somando (preço × quantidade) de todos os itens.
-  - **Checkout**: botão que envia o pedido completo para a API (endpoint `/pedidos`).
   - Validação de carrinho vazio: botão de checkout fica desabilitado e com mensagem informativa.
   - Limpeza automática do carrinho após sucesso no envio do pedido.
   - Sidebar com resumo da compra para fácil visualização do total.
@@ -34,7 +31,6 @@ O site foi construído com Vite e JavaScript puro, consumindo uma API REST para 
     - **Pendente** (amarelo): pedido em processamento.
     - **Finalizado** (vermelho): pedido entregue ou cancelado.
   - Tabela de itens para cada pedido: nome do produto, quantidade, valor unitário e subtotal.
-  - Formatação de datas no padrão brasileiro (DD/MM/YYYY).
   - Formatação de valores monetários em reais com separador de milhar.
   - Exibição de subtotal do pedido.
   - Mensagem informativa when carrinho está vazio: "Você ainda não realizou nenhum pedido".
@@ -45,12 +41,13 @@ O site foi construído com Vite e JavaScript puro, consumindo uma API REST para 
     - **Sucesso** (verde): produto adicionado, pedido enviado com sucesso.
     - **Erro** (vermelho): falha na conexão com API, pedido não enviado.
   - Duração padrão: 2.8 segundos, desaparecendo suavemente.
-  - Múltiplas notificações podem ser exibidas simultaneamente em fila vertical.
-  - Aniação de fade-in e fade-out para melhor UX.
-
 
 ## Estrutura principal
 
+
+## Design System
+
+O Design System com tokens e padrões de componentes está disponível em `./design-system/README.md`.
 - `index.html` - layout principal e navegação.
 - `src/main.js` - roteador e inicialização da aplicação.
 - `src/pages/produtos.js` - renderiza a página de produtos.
@@ -102,7 +99,7 @@ O frontend implementa tratamento de erros básico:
 
 ## Observações importantes
 
-- Configuração da API: A API está configurada em `src/api/api.js` com endereço hardcoded `http://10.87.169.50:8081`.
+- Configuração da API: A API está configurada em `src/api/api.js` com endereço hardcoded `http://localhost:8081`.
   - O backend deve estar rodando e acessível nesse endereço para que o frontend funcione corretamente.
   - Caso contrário, requisições falharão e notificações de erro serão exibidas.
 
