@@ -1,4 +1,4 @@
-const API_URL = "http://10.87.169.48:8081";
+const API_URL = "http://localhost:8081";
 
 export async function getProdutos() {
     const res = await fetch(`${API_URL}/produtos/detalhes`);
@@ -23,7 +23,7 @@ export async function enviarPedido(pedido) {
             "Content-Type": "application/json"
         },
         body: JSON.stringify({
-            clienteId: 27,
+            clienteId: 22,
             itens: pedido.map(item => ({
                 produtoId: item.id,
                 quantidade: item.qtd,
@@ -50,22 +50,38 @@ export async function getPedidos() {
 export async function getPedidoDetalhes(id) {
     const res = await fetch(`${API_URL}/pedidos/${id}`);
     const data = await res.json();
-    const pedido = data?.result ?? null;
-    if (!pedido) {
+
+    if (!data) {
         return null;
     }
 
     return {
-        id: pedido.pedido?.id ?? pedido.Id ?? pedido.id,
-        status: pedido.pedido?.status ?? pedido.Status ?? pedido.status,
-        subtotal: pedido.pedido?.subtotal ?? pedido.pedido?.SubTotal ?? pedido.SubTotal ?? pedido.subtotal,
-        dataCad: pedido.pedido?.data ?? pedido.pedido?.dataCad ?? pedido.DataCad ?? pedido.dataCad,
-        itens: (pedido.itens ?? []).map(item => ({
-            idItem: item.idItem ?? item.ItemPedidoId ?? item.Id,
-            nome: item.produto?.nome ?? item.ProdutoNome ?? "Item",
-            quantidade: item.quantidade ?? item.Quantidade ?? 0,
-            valorUnitario: item.valorItem ?? item.ValorItem ?? item.produto?.valor ?? 0,
-            subtotal: (item.valorItem ?? item.ValorItem ?? item.produto?.valor ?? 0) * (item.quantidade ?? item.Quantidade ?? 0)
+        id: data.pedido?.id,
+        status: data.pedido?.status,
+        subtotal: data.pedido?.subtotal,
+        dataCad: data.pedido?.data,
+
+        itens: (data.itens ?? []).map(item => ({
+            idItem: item.idItem,
+
+            nome: item.produto?.nome ?? "Item",
+
+            quantidade: Number(item.quantidade ?? 0),
+
+            valorUnitario: Number(
+                item.valorItem ??
+                item.produto?.valor ??
+                0
+            ),
+
+            subtotal:
+                Number(
+                    item.valorItem ??
+                    item.produto?.valor ??
+                    0
+                ) *
+                Number(item.quantidade ?? 0)
         }))
     };
+
 }
