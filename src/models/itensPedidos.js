@@ -118,4 +118,6 @@ export class itemPedidos {
         return new itemPedidos(dados.pedidoId, dados.produtoId, dados.quantidade, dados.valorItem, id);
 
     }
+
+    
 }
