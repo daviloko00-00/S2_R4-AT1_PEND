@@ -57,9 +57,11 @@ export class Categoria {
 
 
     // Design Patern : Factory
+    //cria uma instancia na classe : objeto
     static criar(dados){
         return new Categoria(dados.nome, dados.descricao, null);
     }
+    //cria uma instancia com dados que serão utilizados para edição de uma categoria no banco
     static editar(dados, id){
         return new Categoria(dados.nome, dados.descricao, id);
     }
